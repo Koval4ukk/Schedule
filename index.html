@@ -36,13 +36,6 @@
     const geoJsonDataSource = await Cesium.GeoJsonDataSource.load(geoJsonUrl);
     viewer.dataSources.add(geoJsonDataSource);
 
-    // Style the polygon
-    geoJsonDataSource.entities.values.forEach(entity => {
-      entity.polygon.material = Cesium.Color.RED.withAlpha(0.5);
-      entity.polygon.outline = true;
-      entity.polygon.outlineColor = Cesium.Color.RED;
-    });
-
     // Function to check if a point is inside a polygon
     function isPointInPolygon(point, polygon) {
       const x = Cesium.Math.toDegrees(point.longitude);
