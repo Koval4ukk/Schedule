@@ -15,7 +15,7 @@
 
     // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
     const viewer = new Cesium.Viewer('cesiumContainer', {
-      terrain: Cesium.Terrain.fromWorldTerrain(),
+      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
     });
 
     // Fly the camera to a specific location
@@ -29,51 +29,14 @@
 
     // Add Cesium OSM buildings to the scene as our example 3D Tileset.
     const osmBuildingsTileset = await Cesium.createOsmBuildingsAsync();
+    // Adjust the height of the buildings
+    osmBuildingsTileset.modelMatrix = Cesium.Matrix4.fromTranslation(new Cesium.Cartesian3(0, 0, -10)); // Adjust height here
     viewer.scene.primitives.add(osmBuildingsTileset);
 
     // Load GeoJSON polygon from Cesium ion
     const geoJsonUrl = await Cesium.IonResource.fromAssetId(2617084);
     const geoJsonDataSource = await Cesium.GeoJsonDataSource.load(geoJsonUrl);
     viewer.dataSources.add(geoJsonDataSource);
-
-    // Function to check if a point is inside a polygon
-    function isPointInPolygon(point, polygon) {
-      const x = Cesium.Math.toDegrees(point.longitude);
-      const y = Cesium.Math.toDegrees(point.latitude);
-      let inside = false;
-      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-        const xi = polygon[i][0], yi = polygon[i][1];
-        const xj = polygon[j][0], yj = polygon[j][1];
-
-        const intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-      }
-      return inside;
-    }
-
-    // Highlight buildings within the polygon
-    osmBuildingsTileset.tileLoad.addEventListener((tile) => {
-      if (tile.content) {
-        const featuresLength = tile.content.featuresLength;
-        for (let i = 0; i < featuresLength; i++) {
-          const feature = tile.content.getFeature(i);
-          const boundingVolume = feature.boundingVolume;
-
-          // Ensure the bounding volume and center are defined
-          if (boundingVolume && boundingVolume.center) {
-            const position = Cesium.Cartographic.fromCartesian(boundingVolume.center);
-
-            // Check if the position is inside the polygon
-            const polygonHierarchy = geoJsonDataSource.entities.values[0].polygon.hierarchy.getValue(Cesium.JulianDate.now());
-            const positions = polygonHierarchy.positions.map(Cesium.Cartographic.fromCartesian).map(pos => [Cesium.Math.toDegrees(pos.longitude), Cesium.Math.toDegrees(pos.latitude)]);
-
-            if (isPointInPolygon(position, positions)) {
-              feature.color = Cesium.Color.RED;
-            }
-          }
-        }
-      }
-    });
   </script>
 </body>
 </html>
